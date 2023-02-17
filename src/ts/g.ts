@@ -4,14 +4,10 @@
   dessa hopplängder.
   */
 
-function getLength(jumpings: number[]): number {
-  let totalNumber = 0;
-
-  totalNumber = jumpings.reduce(
-    (jumpDistanceSoFar, currentJump) => jumpDistanceSoFar + currentJump
-  );
-
-  return totalNumber;
+function getTotalJumpingLength(jumpings: number[]): number {
+  return jumpings.reduce((jumpDistanceSoFar, currentJump) => {
+    return jumpDistanceSoFar + currentJump;
+  });
 }
 
 /*
@@ -21,20 +17,17 @@ function getLength(jumpings: number[]): number {
 class Student {
   constructor(
     public name: string,
-    public handedInOnTime: boolean,
-    public passed: boolean
+    public hasHandedInOnTime: boolean,
+    public hasPassed: boolean
   ) {}
 }
 
 function getStudentStatus(student: Student): string {
-  student.passed =
-    student.name == "Sebastian"
-      ? student.handedInOnTime
-        ? true
-        : false
-      : false;
-
-  if (student.passed) {
+  if (
+    student.name === "Sebastian" &&
+    student.hasHandedInOnTime &&
+    student.hasPassed
+  ) {
     return "VG";
   } else {
     return "IG";
@@ -47,21 +40,29 @@ function getStudentStatus(student: Student): string {
   */
 
 class Temp {
-  constructor(public q: string, public where: Date, public v: number) {}
+  constructor(
+    public location: string,
+    public timeForMeasurement: Date,
+    public temperature: number
+  ) {}
 }
 
-function averageWeeklyTemperature(heights: Temp[]) {
-  let r = 0;
+function calculateAverageWeeklyTemperature(temperatureHeights: Temp[]) {
+  const MILLISECONDS_IN_A_WEEK: number = 604800000;
+  const DAYS_IN_A_WEEK: number = 7;
+  let totalTemperatures: number = 0;
 
-  for (let who = 0; who < heights.length; who++) {
-    if (heights[who].q === "Stockholm") {
-      if (heights[who].where.getTime() > Date.now() - 604800000) {
-        r += heights[who].v;
-      }
+  for (let i = 0; i < temperatureHeights.length; i++) {
+    if (
+      temperatureHeights[i].location === "Stockholm" &&
+      temperatureHeights[i].timeForMeasurement.getTime() >
+        Date.now() - MILLISECONDS_IN_A_WEEK
+    ) {
+      totalTemperatures += temperatureHeights[i].temperature;
     }
   }
 
-  return r / 7;
+  return totalTemperatures / DAYS_IN_A_WEEK;
 }
 
 /*
@@ -69,53 +70,64 @@ function averageWeeklyTemperature(heights: Temp[]) {
   Se om du kan göra det bättre. Inte bara presentationen räknas, även strukturer.
   */
 
-function showProduct(
-  name: string,
-  price: number,
-  amount: number,
-  description: string,
-  image: string,
-  parent: HTMLElement
-) {
+class Product {
+  constructor(
+    public name: string,
+    public price: number,
+    public amount: number,
+    public description: string,
+    public image: string,
+    public parent: HTMLElement
+  ) {}
+}
+
+function showProduct(products: Product) {
   let container = document.createElement("div");
+
   let title = document.createElement("h4");
-  let pris = document.createElement("strong");
+  let price = document.createElement("strong");
   let imageTag = document.createElement("img");
 
-  title.innerHTML = name;
-  pris.innerHTML = price.toString();
-  imageTag.src = image;
+  title.innerHTML = products.name;
+  price.innerHTML = price.toString();
+  imageTag.src = products.image;
 
   container.appendChild(title);
   container.appendChild(imageTag);
-  container.appendChild(pris);
-  parent.appendChild(container);
+  container.appendChild(price);
+
+  products.parent.appendChild(container);
 }
 
 /*
   5. Följande funktion kommer presentera studenter. Men det finns ett antal saker som 
   går att göra betydligt bättre. Gör om så många som du kan hitta!
   */
+function createContainer(checkbox: HTMLInputElement): HTMLLIElement {
+  let container = document.createElement("li");
+  container.appendChild(checkbox);
+  return container;
+}
+
+function createCheckBox(checked: boolean): HTMLInputElement {
+  let checkbox = document.createElement("input");
+  checkbox.type = "checkbox";
+  checkbox.checked = checked;
+  return checkbox;
+}
+
 function presentStudents(students: Student[]) {
+  let listOfPassedStudents = document.querySelector("ul#passedstudents");
+  let listOfFailedStudents = document.querySelector("ul#failedstudents");
+
   for (const student of students) {
-    if (student.handedInOnTime) {
-      let container = document.createElement("div");
-      let checkbox = document.createElement("input");
-      checkbox.type = "checkbox";
-      checkbox.checked = true;
+    const checkbox = createCheckBox(student.hasHandedInOnTime);
+    const container = createContainer(checkbox);
 
-      container.appendChild(checkbox);
-      let listOfStudents = document.querySelector("ul#passedstudents");
-      listOfStudents?.appendChild(container);
+    if (student.hasHandedInOnTime) {
+      listOfPassedStudents?.appendChild(container);
     } else {
-      let container = document.createElement("div");
-      let checkbox = document.createElement("input");
-      checkbox.type = "checkbox";
-      checkbox.checked = false;
-
-      container.appendChild(checkbox);
-      let listOfStudents = document.querySelector("ul#failedstudents");
-      listOfStudents?.appendChild(container);
+      listOfFailedStudents?.appendChild(container);
     }
   }
 }
@@ -125,15 +137,10 @@ function presentStudents(students: Student[]) {
   Lorem, ipsum, dolor, sit, amet
   Exemplet under löser problemet, men inte speciellt bra. Hur kan man göra istället?
   */
-function concatenateStrings() {
-  let result = "";
-  result += "Lorem";
-  result += "ipsum";
-  result += "dolor";
-  result += "sit";
-  result += "amet";
 
-  return result;
+function concatenateStrings() {
+  let texts: string[] = ["Lorem", "ipsum", "dolor", "sit", "amet"];
+  return texts.join("");
 }
 
 /* 
@@ -142,23 +149,33 @@ function concatenateStrings() {
     fler och fler parametrar behöver läggas till? T.ex. avatar eller adress. Hitta en bättre
     lösning som är hållbar och skalar bättre. 
 */
-function createUser(
-  name: string,
-  birthday: Date,
-  email: string,
-  password: string
-) {
-  // Validation
+const MINIMUM_AGE = 20;
+const EPOCH_YEAR = 1970;
 
-  let ageDiff = Date.now() - birthday.getTime();
+class User {
+  constructor(
+    public name: string,
+    public birthday: Date,
+    public email: string,
+    public password: string
+  ) {}
+}
+
+function calculateAge(user: User) {
+  let ageDiff = Date.now() - user.birthday.getTime();
   let ageDate = new Date(ageDiff);
-  let userAge = Math.abs(ageDate.getUTCFullYear() - 1970);
+  let userAge = Math.abs(ageDate.getUTCFullYear() - EPOCH_YEAR);
 
-  console.log(userAge);
+  return userAge;
+}
 
-  if (!(userAge < 20)) {
+function checkUserAge(user: User) {
+  let userAge = calculateAge(user);
+
+  // Validation
+  if (userAge >= MINIMUM_AGE) {
     // Logik för att skapa en användare
   } else {
-    return "Du är under 20 år";
+    return `Du är under ${MINIMUM_AGE} år`;
   }
 }
